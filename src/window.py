@@ -150,9 +150,14 @@ class ApplicationWindow(Adw.ApplicationWindow):
                 self.sidebar_button.set_active(split_view.get_show_sidebar())
 
         def on_gesture_release(gesture, n, x, y):
-            #if n == 1:
-            #    self.split_view.set_show_sidebar(True)
+            def single_click():
+                self.split_view.set_show_sidebar(True)
+                return False
+            if n == 1:
+                self._gesture_click_timeout = GLib.timeout_add(500, single_click)
             if n == 2:
+                if getattr(self, "_gesture_click_timeout", None):
+                    GLib.source_remove(self._gesture_click_timeout)
                 self.activate_action('win.toggle-fullscreen')
 
         self.connect('notify::fullscreened', on_fullscreened)
