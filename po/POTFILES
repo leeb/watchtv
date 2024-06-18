@@ -1,0 +1,6 @@
+data/dev.leeb.WatchTV.desktop.in
+data/dev.leeb.WatchTV.metainfo.xml.in
+data/dev.leeb.WatchTV.gschema.xml
+src/main.py
+src/window.py
+src/window.ui

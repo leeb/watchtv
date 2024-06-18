@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=watchtv
+Exec=watchtv
+Icon=dev.leeb.WatchTV
+Terminal=false
+Type=Application
+Categories=GTK;
+StartupNotify=true

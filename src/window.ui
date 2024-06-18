@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="Adw" version="1.0"/>
+  <template class="ApplicationWindow" parent="AdwApplicationWindow">
+    <property name="default-width">1024</property>
+    <property name="default-height">622</property>
+    <property name="content">
+      <object class="AdwToolbarView" id="tollbar_view">
+        <child type="top">
+          <object class="AdwHeaderBar" id="header_bar">
+            <child type="end">
+              <object class="GtkMenuButton">
+                <property name="primary">True</property>
+                <property name="icon-name">open-menu-symbolic</property>
+                <property name="tooltip-text" translatable="yes">_Menu</property>
+                <property name="menu-model">primary_menu</property>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkButton" id="fullscreen_button">
+                <property name="icon-name">view-fullscreen-symbolic</property>
+                <property name="tooltip-text" translatable="yes">_Fullscreen</property>
+                <property name="action-name">win.toggle-fullscreen</property>
+              </object>
+            </child>
+            <child type="start">
+              <object class="GtkToggleButton" id="sidebar_button">
+                <property name="icon-name">sidebar-show-symbolic</property>
+                <property name="tooltip-text" translatable="yes">_Channels</property>
+                <property name="action-name">win.toggle-channels</property>
+                <property name="active">True</property>
+              </object>
+            </child>
+            <child type="start">
+              <object class="GtkToggleButton" id="vidctrl_button">
+                <property name="icon-name">media-playback-start-symbolic</property>
+                <property name="tooltip-text" translatable="yes">_Video Control</property>
+                <property name="action-name">win.video-control</property>
+                <property name="visible">False</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <property name="content">
+          <object class="AdwOverlaySplitView" id="split_view">
+            <property name="collapsed">True</property>
+            <property name="show-sidebar">True</property>
+            <property name="sidebar">
+              <object class="GtkScrolledWindow">
+                <child>
+                  <object class="GtkListBox" id="channel_listbox">
+                  </object>
+                </child>
+              </object>
+            </property>
+            <property name="content">
+              <object class="GtkOverlay">
+                <child>
+                  <object class="GtkPicture" id="video_picture"></object>
+                </child>
+                <child type="overlay">
+                  <object class="GtkLabel" id="channel_label">
+                    <style><class name="osd"/><class name="overlay-label"/></style>
+                    <property name="label">---</property>
+                    <property name="halign">end</property>
+                    <property name="valign">start</property>
+                    <property name="visible">False</property>
+                  </object>
+                </child>
+                <child type="overlay">
+                  <object class="GtkLabel" id="alert_label">
+                    <style><class name="overlay-label"/><class name="osd"/></style>
+                    <property name="label">Welcome</property>
+                    <property name="halign">center</property>
+                    <property name="valign">center</property>
+                    <property name="visible">True</property>
+                  </object>
+                </child>
+                <child type="overlay">
+                  <object class="GtkLabel" id="setting_label">
+                    <style><class name="osd"/><class name="overlay-label"/></style>
+                    <property name="label">---</property>
+                    <property name="halign">end</property>
+                    <property name="valign">end</property>
+                    <property name="visible">False</property>
+                  </object>
+                </child>                
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </property>
+  </template>
+  <menu id="primary_menu">
+    <section>
+      <submenu>
+        <attribute name="label" translatable="yes">_Video Size</attribute>
+        <item>
+          <attribute name="label" translatable="yes">_Half Size</attribute>
+          <attribute name="action">win.video-size-half</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">_Original Size</attribute>
+          <attribute name="action">win.video-size-original</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">_Double Size</attribute>
+          <attribute name="action">win.video-size-double</attribute>
+        </item>
+      </submenu>
+      <item>
+        <attribute name="label" translatable="yes">_Fullscreen</attribute>
+        <attribute name="action">win.toggle-fullscreen</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_Show Subtitles</attribute>
+        <attribute name="action">win.toggle-subtitles</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_Mute</attribute>
+        <attribute name="action">win.mute</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">_Preferences</attribute>
+        <attribute name="action">win.preferences</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
+        <attribute name="action">win.show-help-overlay</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_About WatchTV</attribute>
+        <attribute name="action">app.about</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">_Quit</attribute>
+        <attribute name="action">app.quit</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>

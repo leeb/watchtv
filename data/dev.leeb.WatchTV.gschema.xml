@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="watchtv">
+	<schema id="dev.leeb.WatchTV" path="/dev/leeb/WatchTV/">
+		<key name="host" type="s">
+			<default>"127.0.0.1"</default>
+			<summary>Hostname or IP of the TVHeadend server</summary>
+		</key>
+		<key name="username" type="s">
+			<default>""</default>
+			<summary>Username of the TVHeadend account</summary>
+		</key>
+		<key name="password" type="s">
+			<default>""</default>
+			<summary>Password of the TVHeadend account</summary>
+		</key>
+	</schema>
+</schemalist>

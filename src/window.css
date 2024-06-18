@@ -1,0 +1,11 @@
+.overlay-label {
+    font-size: 36pt;
+    margin: 10pt;
+    padding-left: 20px;
+    padding-right: 20px;
+    border-radius: 20px;
+}
+
+.debug-box {
+    border: 2px solid #80ff08;
+}
