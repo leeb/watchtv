@@ -40,11 +40,11 @@ class Application(Adw.Application):
     __gsignals__ = {
         'channels-loaded': (GObject.SIGNAL_RUN_FIRST, None, ()),   # new channel list
     }
+    application_version = GObject.Property(type=str, default="")
 
     def __init__(self):
-        super().__init__(application_id='dev.leeb.WatchTV',
+        super().__init__(application_id="dev.leeb.WatchTV",
                          flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
-
         self.create_action('quit', lambda *_: self.quit(), ['<primary>q'])
         self.create_action('about', self.on_about_action)
 
@@ -116,11 +116,13 @@ class Application(Adw.Application):
                                 application_name='Watch TV',
                                 application_icon='dev.leeb.WatchTV',
                                 developer_name='Lee Briggs',
-                                version='0.1.0',
+                                version=self.get_property('application-version'),
                                 developers=['Lee Briggs'],
                                 copyright="© 2024 Lee Briggs")
-        
         about.set_license_type(Gtk.License.GPL_3_0)
+        # about.set_comments("hello")   # appears as "Details"
+#                                version=self.get_property('application-version'),
+
         about.add_legal_section("This software uses libraries from the FFmpeg project under the LGPLv2.1",
                                 None,
                                 Gtk.License.LGPL_2_1,
@@ -135,8 +137,6 @@ class Application(Adw.Application):
                                 None,
                                 Gtk.License.CUSTOM,
                                 "Wikimedia Commons CC-BY-SA 3.0\nhttps://commons.wikimedia.org/wiki/File:Blank_television_set.svg")
-
-
 
         about.present()
 
@@ -166,4 +166,5 @@ def main(version):
     Gst.init(None)
 
     app = Application()
+    app.set_property('application-version', version)
     return app.run(sys.argv)

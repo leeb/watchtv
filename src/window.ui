@@ -13,21 +13,21 @@
               <object class="GtkMenuButton">
                 <property name="primary">True</property>
                 <property name="icon-name">open-menu-symbolic</property>
-                <property name="tooltip-text" translatable="yes">_Menu</property>
+                <property name="tooltip-text" translatable="yes">Menu</property>
                 <property name="menu-model">primary_menu</property>
               </object>
             </child>
             <child type="end">
               <object class="GtkButton" id="fullscreen_button">
                 <property name="icon-name">view-fullscreen-symbolic</property>
-                <property name="tooltip-text" translatable="yes">_Fullscreen</property>
+                <property name="tooltip-text" translatable="yes">Fullscreen</property>
                 <property name="action-name">win.toggle-fullscreen</property>
               </object>
             </child>
             <child type="start">
               <object class="GtkToggleButton" id="sidebar_button">
                 <property name="icon-name">sidebar-show-symbolic</property>
-                <property name="tooltip-text" translatable="yes">_Channels</property>
+                <property name="tooltip-text" translatable="yes">Channels</property>
                 <property name="action-name">win.toggle-channels</property>
                 <property name="active">True</property>
               </object>
@@ -35,7 +35,7 @@
             <child type="start">
               <object class="GtkToggleButton" id="vidctrl_button">
                 <property name="icon-name">media-playback-start-symbolic</property>
-                <property name="tooltip-text" translatable="yes">_Video Control</property>
+                <property name="tooltip-text" translatable="yes">Video Control</property>
                 <property name="action-name">win.video-control</property>
                 <property name="visible">False</property>
               </object>
