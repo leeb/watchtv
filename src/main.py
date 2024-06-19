@@ -61,16 +61,15 @@ class Application(Adw.Application):
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), 
                                                   css_provider, 
                                                   Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
         win = self.props.active_window
         if not win:
             win = ApplicationWindow(application=self)
+        win.present()
 
         settings = Settings.instance()
         settings.connect('tvhserver-changed', self.on_tvhserver_changed)
         self.on_tvhserver_changed(settings)
 
-        win.present()
 
     def play_channel_number(self, channel_number):
         if channel_number in self.channels:
@@ -104,11 +103,26 @@ class Application(Adw.Application):
                            settings.password)
         self.channeltags = {}
         self.channels = {}
+
         for tag in self._api.get_channeltags():
             self.channeltags[tag.uuid] = tag
         for channel in self._api.get_channels():
             if channel.number:
                 self.channels[(channel.number)] = channel
+
+        def dialog_result(dialog, result, data):
+            try:
+                index = dialog.choose_finish(result)
+                if index == 0:
+                    self.props.active_window.activate_action('win.preferences')
+            except:
+                pass
+
+        if len(self.channeltags) == 0 and len(self.channels) == 0:
+            dialog = Gtk.AlertDialog(message="No response from server, check configuration?")
+            dialog.set_buttons(['Yes', 'No'])
+            dialog.choose(self.props.active_window, None, dialog_result, None)
+
         self.emit('channels-loaded')
 
     def on_about_action(self, widget, _):
@@ -160,7 +174,7 @@ def main(version):
     """The application's entry point."""
 
     # debug, info, warning, error, critical
-    LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+    LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
     logging.basicConfig(level=LOGLEVEL)
 
     Gst.init(None)

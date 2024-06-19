@@ -55,6 +55,8 @@ class TvhApi():
         self._host = host
         self._username = username
         self._password = password
+        self.connected = None
+        self.status = None
 
     def __request(self, url, **kwargs):
         def on_auth(msg, auth, retrying):
@@ -72,23 +74,31 @@ class TvhApi():
         message.connect('authenticate', on_auth)
         #logger.debug(f"Soup request {uri}")
         
+        #WARNING:watchtv.tvhapi:Soup exception: <class 'gi.repository.GLib.GError'> g-io-error-quark: Could not connect to 192.168.21.121: No route to host (37)
+
         try:
             bytes = session.send_and_read(message)
+            self.connected = True
         except Exception as e:
+            self.connected = False
             logger.info(f"Soup exception: {e}")
 
-        if message.get_status() == 200 and bytes:
+        self.status = message.get_status()
+        if self.status == 200 and bytes:
             return bytes.get_data().decode("utf-8")
+        else:
+            logger.info(f"Server status: {message.get_status()}")
+
         return None
     
-    def request(self, url, **kwargs):
+    def json_request(self, url, **kwargs):
         r = self.__request(f"api/{url}", **kwargs)
         if r is None:
             return None
         return json.loads(r, strict=False)
 
     def serverinfo(self):
-        return self.request('serverinfo')
+        return self.json_request('serverinfo')
 
     def play(self, channel_number):
         r = self.__request(f"play/ticket/stream/channelnumber/{channel_number}")
@@ -101,8 +111,7 @@ class TvhApi():
         return url
 
     def get_channeltags(self):
-        #obtain tags
-        data = self.request('channeltag/grid')
+        data = self.json_request('channeltag/grid')
         r = []
         if data:
             for entry in data.get('entries', []):
@@ -110,7 +119,7 @@ class TvhApi():
         return r
         
     def get_channels(self):
-        data = self.request('channel/grid', limit=1000)
+        data = self.json_request('channel/grid', limit=1000)
         r = []
         if data:
             for entry in data.get('entries', []):

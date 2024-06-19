@@ -18,8 +18,20 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from gi.repository import Gtk, Adw, Gio
+import logging
 from .settings import Settings
 from .tvhapi import TvhApi
+
+logger = logging.getLogger(__name__)
+
+
+_server_description = """Credentials for TVHeadend Server.
+These details will only be saved after a successful connection test.
+
+The host should be the IP address or hostname of the TVH Server.
+Note: port is fixed to the default of 9981.
+"""
+
 
 
 class PreferencesWindow(Adw.PreferencesWindow):
@@ -28,26 +40,36 @@ class PreferencesWindow(Adw.PreferencesWindow):
         #self.window = window
 
         self.add(self.create_server_page())
-        page2 = Adw.PreferencesPage(title="Client")
-        self.add(page2)
-        #page.add(self.create_server_page())
+        self.add(self.create_client_page())
 
         def on_close(window):
-            print(f"preferences close request {window}")
+            logger.info(f"preferences close request {window}")
 
         self.connect('close-request', on_close)
 
+    def create_client_page(self):
+        page = Adw.PreferencesPage(title="Client")
+        page.set_icon_name("applications-system-symbolic")
+
+        group = Adw.PreferencesGroup(title="Interface")
+        group.set_description("To-do...")
+
+        page.add(group)
+        return page
 
     def create_server_page(self):
         page = Adw.PreferencesPage(title="Server")
+        page.set_icon_name("network-server-symbolic")
 
         group = Adw.PreferencesGroup(title="TVHeadend Server")
+        self.get_application()
+
+        group.set_description(_server_description)
         page.add(group)
 
         settings = Settings.instance()
 
         def host_changed(row):
-            print(f"host changed {row}")
             settings.host = row.get_text()
 
         def username_changed(row):
@@ -85,43 +107,53 @@ class PreferencesWindow(Adw.PreferencesWindow):
         box.set_spacing(10)
         footer_group.add(box)
 
-        def on_server_connect(button):
-            if Settings.instance().tvhserver_has_changed():
-                print("Server settings have changed")
+        def on_test_configuration(button):    
+            button_labels = ["Cancel", "Save"]
+
+            def dialog_result(dialog, result, data):
+                try:
+                    index = dialog.choose_finish(result)
+                    if index == 1:
+                        Settings.instance().tvhserver_apply()
+                except:
+                    pass
+
+            # a cheeky way to reset things for testing...
+            if settings.host == "reset" and settings.username == "reset" and settings.password == "reset":
+                settings.tvhserver_reset()
+                self.close()                
+                return
+            
+            api = TvhApi(settings.host, settings.username, settings.password)
+            serverinfo = api.serverinfo()
+
+            if serverinfo is None:
+                # failure conditions
+                if api.connected == False:
+                    dialog = Gtk.AlertDialog(message="Host not found")
+                    dialog.show(self)
                 
-                if self.test_server_connection():
-                    print("server details good")
-                    # emit a reload event
-                    Settings.instance().tvhserver_apply()
-
                 else:
-                    print("server details bad")
+                    if api.status == 403:
+                        dialog = Gtk.AlertDialog(message="Error: 403 Forbidden.\nCheck user credentials and server permissions.")
+                    else:
+                        dialog = Gtk.AlertDialog(message=f"Error: {api.status}\nCould not communicate with the server")
+                    dialog.show(self)
 
+            else:
+                if 'api_version' in serverinfo and serverinfo['api_version'] >= 19:
+                    dialog = Gtk.AlertDialog(message="Connection successful")
+                    dialog.set_buttons(button_labels)
+                    dialog.choose(self, None, dialog_result, None)
+                else:
+                    dialog = Gtk.AlertDialog(message="Connected to server, but API is not compatible")
+                    dialog.show(self)
 
-        server_connect_button = Gtk.Button(label="Connect")
-        server_connect_button.connect("clicked", on_server_connect)
+        server_connect_button = Gtk.Button(label="Test Configuration")
+        server_connect_button.connect("clicked", on_test_configuration)
         box.append(server_connect_button)
 
         return page
-
-
-    def test_server_connection(self) -> bool:
-        settings = Settings.instance()
-        api = TvhApi(settings.host, settings.username, settings.password)
-        print(f"  calling server info")
-        serverinfo = api.serverinfo()
-        print(f"  raw response: {serverinfo}")
-
-        try:
-            if serverinfo['api_version'] >= 19:
-                return True
-        except:
-            pass
-        return False
-
-
-
-
 
 
 

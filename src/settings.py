@@ -61,10 +61,19 @@ class Settings(Gio.Settings):
     #    return (self._host, self._username, self._password)
 
     def tvhserver_apply(self):
+        """Copy the volatile server details into Gio.Settings (dconf)"""
         self.set_string('host', self._host)
         self.set_string('username', self._username)
         self.set_string('password', self._password)
         self.emit('tvhserver-changed')
+
+    def tvhserver_reset(self):
+        self.reset('host')
+        self.reset('username')
+        self.reset('password')
+        self._host = None
+        self._username = None
+        self._password = None
 
     def tvhserver_has_changed(self):
         if self._host != self.get_string('host'):
