@@ -2,6 +2,7 @@ builddir/
 .flatpak/
 .flatpak-builder
 _build/
+scribble/
 
 #vscode
 .vscode/

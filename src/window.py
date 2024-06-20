@@ -152,12 +152,16 @@ class ApplicationWindow(Adw.ApplicationWindow):
         def on_gesture_release(gesture, n, x, y):
             def single_click():
                 self.split_view.set_show_sidebar(True)
+                self._gesture_click_timeout = None
                 return False
+            w = self.get_property('default-width')
             if n == 1:
-                self._gesture_click_timeout = GLib.timeout_add(500, single_click)
+                if x < (w / 3): # only use single clicks in the left third fo the screen
+                    self._gesture_click_timeout = GLib.timeout_add(500, single_click)
             if n == 2:
                 if getattr(self, "_gesture_click_timeout", None):
                     GLib.source_remove(self._gesture_click_timeout)
+                    self._gesture_click_timeout = None
                 self.activate_action('win.toggle-fullscreen')
 
         self.connect('notify::fullscreened', on_fullscreened)

@@ -27,30 +27,9 @@
         "org.freedesktop.Sdk.Extension.rust-stable"
     ],
     "build-options" : {
-        "end" : {
-            "CARGO_HOME" : "/run/build/cargo-c/cargo"
-        },
-        "append-path" : "/usr/lib/sdk/rust-stable/bin",
-        "env" : {
-            "LOGLEVEL" : "DEBUG"
-        }
+        "append-path" : "/usr/lib/sdk/rust-stable/bin"
     },
     "modules" : [
-        {
-            "name" : "cargo-c",
-            "buildsystem" : "simple",
-            "build-commands" : [
-                "cargo install cargo-c --root /app"
-            ],
-            "build-options" : {
-                "build-args" : [
-                    "--share=network"
-                ]
-            },
-            "cleanup" : [
-                "*"
-            ]
-        },
         {
             "name" : "gst-plugins-rs",
             "buildsystem" : "simple",
@@ -61,12 +40,15 @@
                     "branch" : "0.12"
                 }
             ],
-            "build-options" : {
+            "build-options": {
                 "build-args" : [
                     "--share=network"
-                ]
+                ],
+                "env": {
+                    "CARGO_HOME": "/run/build/gst-plugin-gtk4/cargo"
+                }
             },
-            "build-commands" : [
+            "build-commands": [
                 "cargo cinstall -p gst-plugin-gtk4 --prefix=/app"
             ]
         },
@@ -110,7 +92,8 @@
                     "sha256" : "3b60d4cac2fbcd085a93e9389ca23e0443bee1ca75574d31d4f12bb1bbecab48"
                 }
             ]
-        },        {
+        },        
+        {
             "name" : "watchtv",
             "builddir" : true,
             "buildsystem" : "meson",
