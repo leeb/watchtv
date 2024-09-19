@@ -21,10 +21,13 @@ import sys
 import os
 import logging
 import gi
+#import ffmpeg
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Gst', '1.0')
+gi.require_version("GstPlay", "1.0")
+gi.require_version("GstPbutils", "1.0")
 gi.require_version('Soup', '3.0')
 
 from gi.repository import Gtk, Gio, Adw, Gst, Gdk, GObject
@@ -174,10 +177,51 @@ def main(version):
     """The application's entry point."""
 
     # debug, info, warning, error, critical
-    LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
+    LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
     logging.basicConfig(level=LOGLEVEL)
 
     Gst.init(None)
+    logger.info(f"Gst version: {Gst.version()}")    # 1.24.7
+
+    for f in os.listdir('/app/lib'):
+        print(f"/app/lib/{f}")
+    print("--------------")
+
+    for f in os.listdir('/app'):
+        print(f"/app/{f}")
+    print("--------------")
+    for f in os.listdir('/app/bin'):
+        print(f"/app/bin/{f}")
+    print("--------------")
+    for f in os.listdir('/app/share'):
+        print(f"/app/share/{f}")
+    print("--------------")
+
+
+
+    reg = Gst.Registry.get()
+    for x in reg.get_plugin_list():
+        print (x.get_name(), x.get_filename())
+
+    avdec_h264 = Gst.ElementFactory.make('avdec_h264', 'decoder')
+    logger.info(f"decoder: {avdec_h264} {type(avdec_h264)}")
+
+    openh264 = Gst.ElementFactory.make('openh264dec', 'decoder')
+    logger.info(f"decoder: {openh264} {type(openh264)}")
+
+
+
+    # list all decoders
+    #factories = Gst.ElementFactory.list_get_elements( \
+    #    Gst.ELEMENT_FACTORY_TYPE_DECODER | Gst.ELEMENT_FACTORY_TYPE_MEDIA_VIDEO, 
+    #    Gst.Rank.MARGINAL)
+
+    #for factory in factories:
+    #    print(factory.get_element_type())
+
+
+
+
 
     app = Application()
     app.set_property('application-version', version)

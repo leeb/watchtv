@@ -1,7 +1,7 @@
 {
     "id" : "dev.leeb.WatchTV",
     "runtime" : "org.gnome.Platform",
-    "runtime-version" : "46",
+    "runtime-version" : "47",
     "sdk" : "org.gnome.Sdk",
     "command" : "watchtv",
     "finish-args" : [
@@ -12,6 +12,13 @@
         "--socket=wayland",
         "--socket=pulseaudio"
     ],
+    "add-build-extensions": {
+        "org.freedesktop.Platform.ffmpeg-full": {
+            "version": "24.08",
+            "directory": "lib/ffmpeg",
+            "add-ld-path": "."
+        }
+    },
     "cleanup" : [
         "/include",
         "/lib/pkgconfig",
@@ -23,76 +30,7 @@
         "*.la",
         "*.a"
     ],
-    "sdk-extensions" : [
-        "org.freedesktop.Sdk.Extension.rust-stable"
-    ],
-    "build-options" : {
-        "append-path" : "/usr/lib/sdk/rust-stable/bin"
-    },
-    "modules" : [
-        {
-            "name" : "gst-plugins-rs",
-            "buildsystem" : "simple",
-            "sources" : [
-                {
-                    "type" : "git",
-                    "url" : "https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs",
-                    "branch" : "0.12"
-                }
-            ],
-            "build-options": {
-                "build-args" : [
-                    "--share=network"
-                ],
-                "env": {
-                    "CARGO_HOME": "/run/build/gst-plugin-gtk4/cargo"
-                }
-            },
-            "build-commands": [
-                "cargo cinstall -p gst-plugin-gtk4 --prefix=/app"
-            ]
-        },
-        {
-            "name" : "ffmpeg",
-            "builddir" : true,
-            "cleanup" : [
-                "/include",
-                "/lib/pkgconfig",
-                "/share/ffmpeg/examples"
-            ],
-            "config-opts" : [
-                "--prefix=/app",
-                "--libdir=/app/lib",
-                "--enable-gpl",
-                "--enable-version3",
-                "--enable-shared",
-                "--disable-static",
-                "--enable-gnutls",
-                "--disable-doc",
-                "--disable-programs",
-                "--disable-encoders",
-                "--disable-muxers",
-                "--enable-encoder=png"
-            ],
-            "sources" : [
-                {
-                    "type" : "archive",
-                    "url" : "https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.bz2",
-                    "sha256" : "5e3133939a61ef64ac9b47ffd29a5ea6e337a4023ef0ad972094b4da844e3a20"
-                }
-            ]
-        },
-        {
-            "name" : "gst-libav",
-            "buildsystem" : "meson",
-            "sources" : [
-                {
-                    "type" : "archive",
-                    "url" : "https://gstreamer.freedesktop.org/src/gst-libav/gst-libav-1.22.12.tar.xz",
-                    "sha256" : "3b60d4cac2fbcd085a93e9389ca23e0443bee1ca75574d31d4f12bb1bbecab48"
-                }
-            ]
-        },        
+    "modules" : [  
         {
             "name" : "watchtv",
             "builddir" : true,

@@ -341,8 +341,27 @@ class ApplicationWindow(Adw.ApplicationWindow):
         self.playbin.set_property("video-sink", video_sink) # video_bin
 
         # set player defaults
-        self.set_show_subtitles(False)
+        #self.set_show_subtitles(False)
         self.playbin.set_property('mute', False)
+                #GstPlayFlags.DEINTERLACE | \
+        flags = GstPlayFlags.BUFFERING | \
+                GstPlayFlags.SOFT_COLORBALANCE | GstPlayFlags.SOFT_VOLUME | \
+                GstPlayFlags.VIDEO | GstPlayFlags.AUDIO 
+        flags = self.playbin.set_property("flags", flags)
+
+        # Create a deinterlace element
+        deinterlace = Gst.ElementFactory.make("deinterlace", "deinterlace")
+        #deinterlace.set_property('method', 'greedyl')
+        deinterlace.set_property('method', 'tomsmocomp')        
+        logger.info(f"Deinterlacer: {deinterlace} {deinterlace.get_property('method')}")
+
+        # best result from horizintal ticket test
+        deinterlace.set_property("fields", "top")   # _all_, top, bottom, auto
+        deinterlace.set_property("tff", "tff")  # _auto_, tff, bff
+
+        deinterlace.set_property("locking", "auto")   # _none_, auto, active, passive
+        deinterlace.set_property("mode", "interlaced")  # _auto_, interlaced, disabled, auto-strict
+        self.playbin.set_property("video-filter", deinterlace)
 
         # this function is called when the pipeline changes states.
         def on_state_changed(bus, msg):
@@ -374,21 +393,35 @@ class ApplicationWindow(Adw.ApplicationWindow):
             #if old_state == Gst.State.READY and new_state == Gst.State.PAUSED:
                 #pass
 
+        def on_pad_added(playbin, pad):
+            logger.info("@on_pad_added")
+            caps = pad.get_current_caps()
+            structure = caps.get_structure(0)
+
+            if structure.has_field('width'):
+                print(f"Width: {structure.get_int('width')[1]}")
+            else:
+                print("no width structure")
+
         # obtain the bus to monitor for state changes
         bus = self.playbin.get_bus()
         bus.add_signal_watch()
-
         bus.connect("message::state-changed", on_state_changed)
 
-    def set_show_subtitles(self, show):
-        logger.info(f"set show subtitles {show}")
-        flags = self.playbin.get_property("flags")
-        if show:
-            flags |= GstPlayFlags.TEXT
-        else:
-            flags &= ~GstPlayFlags.TEXT
+        self.playbin.connect("pad-added", on_pad_added)
 
-        self.playbin.set_property("flags", flags)
+
+        def on_element_setup(playbin, element):
+            logger.info(f"@on_element_setup {element}")
+
+        def on_source_setup(playbin, source):
+            logger.info(f"@on_source_setup {source}")
+
+        #self.playbin.connect('element-setup', on_element_setup)
+        #self.playbin.connect('source-setup', on_source_setup)
+
+
+
 
     def query_video_resolution(self):
         video_sink = self.playbin.get_property('video-sink')
@@ -399,6 +432,7 @@ class ApplicationWindow(Adw.ApplicationWindow):
                 if caps:
                     structure = caps.get_structure(0)
                     #logger.info(structure.to_string())
+                    logger.info(f"caps structure {structure}")
 
                     if structure.has_field("width") and structure.has_field("height") and \
                                                         structure.has_field("pixel-aspect-ratio"):
@@ -411,6 +445,21 @@ class ApplicationWindow(Adw.ApplicationWindow):
                         logger.info(f"Pixel aspect ratio: {par_num}/{par_den}")
 
                         self.video_size.set_video(width, height, par_num, par_den)
+
+                    if structure.has_field("interlace-mode"):
+                        logger.info(f"interlace-mode: {structure.get_string('interlace-mode')}")
+                    else:
+                        logger.info("no interlaced field")
+
+    def set_show_subtitles(self, show):
+        logger.info(f"set show subtitles {show}")
+        flags = self.playbin.get_property("flags")
+        if show:
+            flags |= GstPlayFlags.TEXT
+        else:
+            flags &= ~GstPlayFlags.TEXT
+
+        self.playbin.set_property("flags", flags)
 
     def play_stream(self, uri):
         logger.info(f"play stream {uri}")
