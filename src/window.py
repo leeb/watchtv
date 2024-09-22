@@ -350,18 +350,16 @@ class ApplicationWindow(Adw.ApplicationWindow):
         flags = self.playbin.set_property("flags", flags)
 
         # Create a deinterlace element
-        deinterlace = Gst.ElementFactory.make("deinterlace", "deinterlace")
-        #deinterlace.set_property('method', 'greedyl')
-        deinterlace.set_property('method', 'tomsmocomp')        
-        logger.info(f"Deinterlacer: {deinterlace} {deinterlace.get_property('method')}")
+        self.deinterlace = Gst.ElementFactory.make("deinterlace", "deinterlace")
+        self.deinterlace.set_property('method', 'yadif')    # greedyl, tomsmocomp
 
-        # best result from horizintal ticket test
-        deinterlace.set_property("fields", "top")   # _all_, top, bottom, auto
-        deinterlace.set_property("tff", "tff")  # _auto_, tff, bff
+        # best result from horizontal ticker test
+        self.deinterlace.set_property("fields", "top")   # _all_, top, bottom, auto
+        self.deinterlace.set_property("tff", "tff")  # _auto_, tff, bff
 
-        deinterlace.set_property("locking", "auto")   # _none_, auto, active, passive
-        deinterlace.set_property("mode", "interlaced")  # _auto_, interlaced, disabled, auto-strict
-        self.playbin.set_property("video-filter", deinterlace)
+        self.deinterlace.set_property("locking", "none")   # _none_, auto, active, passive
+        self.deinterlace.set_property("mode", "interlaced")  # _auto_, interlaced, disabled, auto-strict
+        self.playbin.set_property("video-filter", self.deinterlace)
 
         # this function is called when the pipeline changes states.
         def on_state_changed(bus, msg):
@@ -393,6 +391,62 @@ class ApplicationWindow(Adw.ApplicationWindow):
             #if old_state == Gst.State.READY and new_state == Gst.State.PAUSED:
                 #pass
 
+        def on_msg_element(bus, msg):
+            logger.info(f"### ELEMENT {msg.type} ###")
+            structure = msg.get_structure()
+            if not structure:
+                return
+            
+            logger.info(f":: {structure.get_name()} :: {structure.to_string()}")
+            #:: pmt :: pmt, section=(GstMpegtsSection)NULL;
+
+            caps = structure.get_value("caps")
+            if caps:
+                debug.info("---------- has caps -----------------------")
+
+            if structure.has_field("width"):
+                logger.info(f"- Width: {structure.get_int('width')}")                
+
+            if structure and structure.has_field("width") and structure.has_field("height"):
+                width = structure.get_int("width")[1]
+                height = structure.get_int("height")[1]
+                
+                logger.info(f"- Video resolution: {width}x{height}")
+
+        def on_application_message(bus, msg):
+            logger.info("### APPLICATION MESSAGE")
+            logger.info(f":: {msg.get_structure().get_name()}")
+
+        def on_msg_stream_selected(bus, msg):
+            logger.info("### STREAM SELECTED")
+            logger.info(f":: {msg.get_structure().get_name()}")
+
+        def on_msg_tag(bus, msg):
+            taglist = msg.parse_tag()
+            logger.debug(f"### TAG MSG {taglist.to_string()}")
+            for i in range(taglist.n_tags()):
+                name = taglist.nth_tag_name(i)
+                if name == 'minimum-bitrate':
+                    value = taglist.get_uint(name)
+                elif name == 'maximum-bitrate':
+                    value = taglist.get_uint(name)
+                elif name == 'bitrate':
+                    value = taglist.get_uint(name)
+                else:
+                    #value = taglist.get_string(name)[1]
+                    value = "???"
+                
+                logger.debug(f"    TAG {name} : {value}")
+
+        # obtain the bus to monitor for state changes
+        bus = self.playbin.get_bus()
+        bus.add_signal_watch()
+        bus.connect("message::state-changed", on_state_changed)
+        bus.connect("message::element", on_msg_element)
+        bus.connect("message::application", on_application_message)
+        bus.connect("message::tag", on_msg_tag)
+        bus.connect("message::stream-selected", on_msg_stream_selected)
+
         def on_pad_added(playbin, pad):
             logger.info("@on_pad_added")
             caps = pad.get_current_caps()
@@ -403,14 +457,6 @@ class ApplicationWindow(Adw.ApplicationWindow):
             else:
                 print("no width structure")
 
-        # obtain the bus to monitor for state changes
-        bus = self.playbin.get_bus()
-        bus.add_signal_watch()
-        bus.connect("message::state-changed", on_state_changed)
-
-        self.playbin.connect("pad-added", on_pad_added)
-
-
         def on_element_setup(playbin, element):
             logger.info(f"@on_element_setup {element}")
 
@@ -418,9 +464,7 @@ class ApplicationWindow(Adw.ApplicationWindow):
             logger.info(f"@on_source_setup {source}")
 
         #self.playbin.connect('element-setup', on_element_setup)
-        #self.playbin.connect('source-setup', on_source_setup)
-
-
+        self.playbin.connect('source-setup', on_source_setup)
 
 
     def query_video_resolution(self):
@@ -443,13 +487,27 @@ class ApplicationWindow(Adw.ApplicationWindow):
                         #logger.info(f"Pixel aspect ratio: {par}")
                         logger.info(f"Queried Video resolution: {width}x{height}")
                         logger.info(f"Pixel aspect ratio: {par_num}/{par_den}")
-
                         self.video_size.set_video(width, height, par_num, par_den)
 
-                    if structure.has_field("interlace-mode"):
-                        logger.info(f"interlace-mode: {structure.get_string('interlace-mode')}")
-                    else:
-                        logger.info("no interlaced field")
+
+        # Test whether the stream is interlaced by querying the input to the deinterlace filter,
+        # as playbin's sink will report the output after the filter.
+        sink_pad = self.deinterlace.get_static_pad('sink')
+        pad_caps = sink_pad.get_current_caps()
+        #logger.info(f"- sink pad caps {pad_caps}")
+
+        progressive = True
+        structure = pad_caps.get_structure(0)
+        if structure.has_field("interlace-mode"):
+            if structure.get_string('interlace-mode') != "progressive":
+                progressive = False
+        logger.info(f"Progressive video : {progressive}")
+
+        if progressive:
+            self.deinterlace.set_property("mode", "disabled")
+        else:
+            self.deinterlace.set_property("mode", "interlaced")
+
 
     def set_show_subtitles(self, show):
         logger.info(f"set show subtitles {show}")
